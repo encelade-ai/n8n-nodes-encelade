@@ -43,7 +43,7 @@ In short: in your n8n instance go to **Settings → Community Nodes → Install*
 | Get Status | Poll a generation session for status/result. | `GET /api/public/v1/sessions/{sessionId}`    |
 | Cancel     | Cancel an in-progress generation.            | `DELETE /api/public/v1/sessions/{sessionId}` |
 
-The **Generate** hero operation exposes **Topic**, **Outline Hints** (required) and **Page Count** up front. Everything else — Tone, Audience, Image Style, Verbosity, Model, Theme, Theme Mode, Media Provider, Icon Family, Call To Action, Deep Research, Use Connectors, End-User Email/Role, Callback URL — lives under **Additional Fields**, plus a **Supporting Materials** collection.
+The **Generate** and **Plan Outline** operations both expose **Topic**, **Outline Hints** (required) and **Page Count** up front. Everything else — Tone, Audience, Image Style, Verbosity, Model, Theme, Theme Mode, Media Provider, Icon Family, Call To Action (text + toggle), Deep Research, Use Connectors, End-User Email/Role, Callback URL — lives under **Additional Fields**, plus a **Supporting Materials** collection.
 
 > **Polling is not handled inside the node.** `Generate` returns a `sessionId` immediately; you decide how to wait (a Wait node + Get Status loop, or the Encelade Trigger node). This keeps long-running generations from tying up an n8n worker.
 
@@ -59,11 +59,16 @@ Starts a workflow when a generation finishes. On activation it registers a webho
 You need an Encelade API token.
 
 1. Sign in to [Encelade](https://www.encelade.ai) and create an API token in your account/API settings.
-2. Grant the scopes your workflow needs:
-   - `project:plan` + `project:generate` — Generate / Plan Outline / Generate From Plan
-   - `session:read` / `session:write` — Get Status / Cancel
-   - `project:read` / `project:write` / `project:delete` — Get / Get Many / Update / Delete
-   - `webhook:read` / `webhook:write` — Encelade Trigger
+2. Grant the scopes your workflow needs (each operation needs only the scopes listed):
+   - `project:plan` — Plan Outline
+   - `project:plan` + `project:generate` — Generate (it plans _then_ generates, so it needs both)
+   - `project:generate` — Generate From Plan
+   - `project:read` — Get / Get Many (also the credential Test button)
+   - `project:write` — Update
+   - `project:delete` — Delete
+   - `session:read` — Get Status
+   - `session:write` — Cancel
+   - `webhook:read` + `webhook:write` — Encelade Trigger
 3. In n8n create **Encelade API** credentials and paste the token into **API Key**. The token is sent as `Authorization: Bearer <token>` and the tenant is derived from the token — no extra header needed.
 4. **Base URL** defaults to `https://www.encelade.ai`; change it only for self-hosted deployments.
 
@@ -77,16 +82,24 @@ Built and tested against n8n with `n8n-workflow` 2.x (n8n nodes API version 1). 
 
 ## Usage
 
-### Plan → Generate → Poll
+### Generate → Poll (recommended)
 
-The recommended pattern for the async generate flow:
+**Generate** plans _and_ builds the deck in a single call — there is no separate plan step to run first. Planning happens inside the operation, which is why the initial response reads `status: "planning"`. It returns a `sessionId` immediately; you then poll for the result:
 
-1. **Encelade → Plan Outline** (optional) to produce an editable outline, or skip straight to step 2.
-2. **Encelade → Generate** with a Topic and at least one Outline Hint → returns `{ sessionId, status: "planning" }`.
-3. **Wait** node (e.g. 15–30s).
-4. **Encelade → Session: Get Status** with the `sessionId`.
-5. **IF** `phase` is `done` → continue (the response includes `projectPid`, `link`, and `shareLink`). If `phase` is `failed` → handle the error. Otherwise loop back to the Wait node.
-6. Optionally **Encelade → Get** or **Get Published** to fetch the finished deck.
+1. **Encelade → Generate** with a Topic and at least one Outline Hint → returns `{ sessionId, status: "planning" }`.
+2. **Wait** node (e.g. 15–30s).
+3. **Encelade → Session: Get Status** with the `sessionId`.
+4. **IF** `phase` is `done` → continue (the response includes `projectPid` and `link`; `shareLink` is present only when the deck was generated for an end user via End-User Email). If `phase` is `failed` → handle the error. Otherwise loop back to the Wait node.
+5. Optionally **Encelade → Get** or **Get Published** to fetch the finished deck.
+
+### Review the outline first (optional)
+
+Use this only when a human (or another workflow step) needs to review or edit the outline before slides are built. Note that **Generate ignores a plan** — to build from an edited outline you must use **Generate From Plan**, not Generate:
+
+1. **Encelade → Plan Outline** with a Topic and Outline Hints → returns an editable `plan`.
+2. Edit the `plan` as needed (e.g. a Set/Edit Fields node or a manual approval step).
+3. **Encelade → Generate From Plan** with that plan → returns a `sessionId`.
+4. Poll **Session → Get Status** as in steps 2–5 above.
 
 ### Event-driven (no polling)
 
