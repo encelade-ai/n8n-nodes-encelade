@@ -54,9 +54,27 @@ export class Encelade implements INodeType {
 			{
 				name: 'enceladeApi',
 				required: true,
+				displayOptions: { show: { authentication: ['apiKey'] } },
+			},
+			{
+				name: 'enceladeOAuth2Api',
+				required: true,
+				displayOptions: { show: { authentication: ['oAuth2'] } },
 			},
 		],
 		properties: [
+			{
+				displayName: 'Authentication',
+				name: 'authentication',
+				type: 'options',
+				noDataExpression: true,
+				options: [
+					{ name: 'API Key', value: 'apiKey' },
+					{ name: 'OAuth2 (PKCE)', value: 'oAuth2' },
+				],
+				default: 'apiKey',
+				description: 'How to authenticate with the Encelade API',
+			},
 			{
 				displayName: 'Resource',
 				name: 'resource',

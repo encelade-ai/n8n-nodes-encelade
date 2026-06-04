@@ -37,7 +37,8 @@
 		"n8nNodesApiVersion": 1,
 		"strict": true,
 		"credentials": [
-			"dist/credentials/EnceladeApi.credentials.js"
+			"dist/credentials/EnceladeApi.credentials.js",
+			"dist/credentials/EnceladeOAuth2Api.credentials.js"
 		],
 		"nodes": [
 			"dist/nodes/Encelade/Encelade.node.js",

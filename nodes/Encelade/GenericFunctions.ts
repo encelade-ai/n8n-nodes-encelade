@@ -25,8 +25,16 @@ export async function enceladeApiRequest(
 	qs: IDataObject = {},
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
-	const credentials = await this.getCredentials('enceladeApi');
-	const baseUrl = ((credentials.baseUrl as string) || DEFAULT_BASE_URL).replace(/\/+$/, '');
+	const authentication = this.getNodeParameter('authentication', 0) as string;
+	const credentialType = authentication === 'oAuth2' ? 'enceladeOAuth2Api' : 'enceladeApi';
+
+	// The API Key credential carries a self-host-configurable base URL; the
+	// OAuth2 flow only targets the hosted instance, so default it there.
+	let baseUrl = DEFAULT_BASE_URL;
+	if (credentialType === 'enceladeApi') {
+		const credentials = await this.getCredentials('enceladeApi');
+		baseUrl = ((credentials.baseUrl as string) || DEFAULT_BASE_URL).replace(/\/+$/, '');
+	}
 
 	const options: IHttpRequestOptions = {
 		method,
@@ -42,7 +50,7 @@ export async function enceladeApiRequest(
 	}
 
 	try {
-		return await this.helpers.httpRequestWithAuthentication.call(this, 'enceladeApi', options);
+		return await this.helpers.httpRequestWithAuthentication.call(this, credentialType, options);
 	} catch (error) {
 		throw new NodeApiError(this.getNode(), error as JsonObject);
 	}
