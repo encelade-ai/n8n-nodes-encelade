@@ -11,7 +11,7 @@ export class EnceladeApi implements ICredentialType {
 
 	displayName = 'Encelade API';
 
-	documentationUrl = 'https://www.encelade.ai';
+	documentationUrl = 'https://www.encelade.ai/docs';
 
 	icon: Icon = 'file:../nodes/Encelade/encelade.svg';
 
