@@ -19,6 +19,8 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 In short: in your n8n instance go to **Settings → Community Nodes → Install**, enter `n8n-nodes-encelade`, and confirm. After installation you will have two nodes available: **Encelade** (actions) and **Encelade Trigger** (events).
 
+A ready-to-import example workflow lives in **[`examples/generate-deck.json`](examples/generate-deck.json)** — it generates a deck from a prompt and polls until it's ready. Import it (n8n → **⋯ → Import from File**), select your Encelade API credential on the two Encelade nodes, and run.
+
 ## Operations
 
 ### Encelade (action node)
@@ -58,7 +60,7 @@ Starts a workflow when a generation finishes. On activation it registers a webho
 
 You need an Encelade API token.
 
-1. Sign in to [Encelade](https://www.encelade.ai) and create an API token in your account/API settings.
+1. Get a token the quick way at **[encelade.ai/setup/n8n](https://www.encelade.ai/setup/n8n)** — sign in and click **Mint** (it provisions your account if needed). Or create one manually in your Encelade account / API settings.
 2. Grant the scopes your workflow needs (each operation needs only the scopes listed):
    - `project:plan` — Plan Outline
    - `project:plan` + `project:generate` — Generate (it plans _then_ generates, so it needs both)
