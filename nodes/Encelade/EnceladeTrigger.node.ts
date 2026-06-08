@@ -113,14 +113,18 @@ export class EnceladeTrigger implements INodeType {
 						`/api/public/v1/webhooks/${encodeURIComponent(webhookId)}`,
 					);
 				} catch (error) {
-					// A 404 means the webhook is already gone server-side — deregistration
-					// is effectively done, so clear the stored ids below and report success.
-					// Any other failure (auth, network, 5xx) is surfaced as a NodeApiError
-					// so operators see why teardown failed instead of it disappearing behind
-					// a silent `return false`.
-					if ((error as NodeApiError).httpCode !== '404') {
-						throw new NodeApiError(this.getNode(), error as JsonObject);
+					// A 404 is ambiguous: the webhook may already be gone, or the current
+					// credentials may point at a different Encelade tenant than the one
+					// that owns it (the API scopes deletes by tenant). We can't tell these
+					// apart, so we keep webhookId/secret rather than clear them below —
+					// clearing would orphan a still-registered webhook and lose the only
+					// handle to remove it later. Report failure so the state survives and a
+					// later deactivation with the right credentials can still deregister it.
+					if ((error as NodeApiError).httpCode === '404') {
+						return false;
 					}
+					// Real failures (auth, network, 5xx) surface in the n8n UI.
+					throw new NodeApiError(this.getNode(), error as JsonObject);
 				}
 
 				delete staticData.webhookId;
