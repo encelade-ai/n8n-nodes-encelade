@@ -5,8 +5,9 @@ import type {
 	INodeTypeDescription,
 	IWebhookFunctions,
 	IWebhookResponseData,
+	JsonObject,
 } from 'n8n-workflow';
-import { NodeConnectionTypes } from 'n8n-workflow';
+import { NodeApiError, NodeConnectionTypes } from 'n8n-workflow';
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 
 import { enceladeApiRequest } from './GenericFunctions';
@@ -111,8 +112,15 @@ export class EnceladeTrigger implements INodeType {
 						'DELETE',
 						`/api/public/v1/webhooks/${encodeURIComponent(webhookId)}`,
 					);
-				} catch {
-					return false;
+				} catch (error) {
+					// A 404 means the webhook is already gone server-side — deregistration
+					// is effectively done, so clear the stored ids below and report success.
+					// Any other failure (auth, network, 5xx) is surfaced as a NodeApiError
+					// so operators see why teardown failed instead of it disappearing behind
+					// a silent `return false`.
+					if ((error as NodeApiError).httpCode !== '404') {
+						throw new NodeApiError(this.getNode(), error as JsonObject);
+					}
 				}
 
 				delete staticData.webhookId;
