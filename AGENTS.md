@@ -84,6 +84,18 @@ project _may_ contain example nodes and/or credentials that need to be
   CHANGELOG.md** in the root of the repository
 - Read `.agents/workflow.md` for more info
 
+## Testing standards
+
+- For behavior-changing work, add or update the smallest set of tests that
+  protects the changed behavior or regression fix.
+- Test observable node behavior, public contracts, meaningful invariants, and
+  high-risk decision boundaries. Each test must fail for a specific plausible
+  regression.
+- Do not add tautological or coverage-only tests that merely confirm fixtures,
+  setup, mocked values, implementation details, or their equivalent of
+  `true === true`. Strengthen a test that would pass after a realistic faulty
+  implementation, or omit it when no meaningful behavior needs coverage.
+
 ## Context-specific docs
 
 Load these before working on the relevant area:
