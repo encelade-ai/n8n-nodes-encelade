@@ -13,7 +13,7 @@ import { enceladeApiRequest, enceladeApiRequestAllItems } from './GenericFunctio
 
 const pageCountOptions: INodePropertyOptions[] = [
 	{ name: 'Auto', value: 'auto' },
-	...Array.from({ length: 17 }, (_unused, index) => {
+	...Array.from({ length: 47 }, (_unused, index) => {
 		const value = String(index + 4);
 		return { name: value, value };
 	}),
@@ -169,7 +169,8 @@ export class Encelade implements INodeType {
 					hide: { artifactType: ['one_pager'] },
 				},
 				options: pageCountOptions,
-				description: 'Number of pages to generate, or Auto to let Encelade decide',
+				description:
+					"Number of pages to generate (4–50, up to your plan's page limit), or Auto to let Encelade decide",
 			},
 			{
 				displayName: 'Additional Fields',

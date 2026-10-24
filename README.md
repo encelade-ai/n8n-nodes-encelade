@@ -43,7 +43,7 @@ A ready-to-import example workflow lives in **[`examples/generate-deck.json`](ex
 | Get       | Get a run's status, plan and link.  | `GET /api/public/v1/generation/runs/{runId}`         |
 | Cancel    | Cancel a run that has not finished. | `POST /api/public/v1/generation/runs/{runId}/cancel` |
 
-**Generate** takes a **Brief** (required: what to make plus any notes or data, up to 200,000 characters), an **Artifact Type** (Deck, One-Pager or Proposal) and a **Page Count** (Auto or 4+; a one-pager is always one page). Audience, Tone, Call To Action, Language, Research, Style (decks), One-Pager Design (one-pagers), Theme and Fit To Page Cap live under **Additional Fields**.
+**Generate** takes a **Brief** (required: what to make plus any notes or data, up to 200,000 characters), an **Artifact Type** (Deck, One-Pager or Proposal) and a **Page Count** (Auto or 4–50, up to your plan's page limit; a one-pager is always one page). Audience, Tone, Call To Action, Language, Research, Style (decks), One-Pager Design (one-pagers), Theme and Fit To Page Cap live under **Additional Fields**.
 
 > **Polling is not handled inside the node.** `Generate` returns `{ runId, projectPid, status: "queued" }` immediately; you decide how to wait (a Wait node + Generation Run → Get loop, or the Encelade Trigger node). This keeps long-running generations from tying up an n8n worker.
 
