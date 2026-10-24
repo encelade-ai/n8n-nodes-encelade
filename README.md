@@ -2,7 +2,7 @@
 
 This is an n8n community node. It lets you use [Encelade](https://www.encelade.ai) in your n8n workflows.
 
-Encelade turns a prompt and a few hints into a fully designed, on-brand presentation. This package wraps the Encelade public API so you can plan outlines, generate decks, manage presentations, and react to generation events — all from n8n.
+Encelade turns a brief into a fully designed, on-brand presentation. This package wraps the Encelade public API so you can generate decks, one-pagers and proposals, manage presentations, and react to generation events — all from n8n.
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
 
@@ -19,7 +19,7 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 In short: in your n8n instance go to **Settings → Community Nodes → Install**, enter `n8n-nodes-encelade`, and confirm. After installation you will have two nodes available: **Encelade** (actions) and **Encelade Trigger** (events).
 
-A ready-to-import example workflow lives in **[`examples/generate-deck.json`](examples/generate-deck.json)** — it generates a deck from a prompt and polls until it's ready. Import it (n8n → **⋯ → Import from File**), select your Encelade API credential on the two Encelade nodes, and run.
+A ready-to-import example workflow lives in **[`examples/generate-deck.json`](examples/generate-deck.json)** — it generates a deck from a brief and polls the run until it's ready. Import it (n8n → **⋯ → Import from File**), select your Encelade API credential on the two Encelade nodes, and run.
 
 ## Operations
 
@@ -27,27 +27,25 @@ A ready-to-import example workflow lives in **[`examples/generate-deck.json`](ex
 
 **Presentation**
 
-| Operation          | Description                                                                | API                                               |
-| ------------------ | -------------------------------------------------------------------------- | ------------------------------------------------- |
-| Generate           | Plan and generate a deck in one async call. Returns a `sessionId` to poll. | `POST /api/public/v1/projects/generate`           |
-| Plan Outline       | Generate an editable outline (synchronous by default).                     | `POST /api/public/v1/projects/plan`               |
-| Generate From Plan | Build a deck from an existing/edited plan. Async by default.               | `POST /api/public/v1/projects/generate-from-plan` |
-| Get                | Retrieve a presentation by ID.                                             | `GET /api/public/v1/projects/{id}`                |
-| Get Many           | List presentations (supports Return All).                                  | `GET /api/public/v1/projects`                     |
-| Get Published      | Retrieve a published deck by its public slug.                              | `GET /api/public/published/{slug}`                |
-| Update             | Update presentation settings.                                              | `PATCH /api/public/v1/projects/{id}`              |
-| Delete             | Delete a presentation.                                                     | `DELETE /api/public/v1/projects/{id}`             |
+| Operation     | Description                                        | API                                   |
+| ------------- | -------------------------------------------------- | ------------------------------------- |
+| Generate      | Start a generation run. Returns a `runId` to poll. | `POST /api/public/v1/generation/runs` |
+| Get           | Retrieve a presentation by ID.                     | `GET /api/public/v1/projects/{id}`    |
+| Get Many      | List presentations (supports Return All).          | `GET /api/public/v1/projects`         |
+| Get Published | Retrieve a published deck by its public slug.      | `GET /api/public/published/{slug}`    |
+| Update        | Update presentation settings.                      | `PATCH /api/public/v1/projects/{id}`  |
+| Delete        | Delete a presentation.                             | `DELETE /api/public/v1/projects/{id}` |
 
-**Session**
+**Generation Run**
 
-| Operation  | Description                                  | API                                          |
-| ---------- | -------------------------------------------- | -------------------------------------------- |
-| Get Status | Poll a generation session for status/result. | `GET /api/public/v1/sessions/{sessionId}`    |
-| Cancel     | Cancel an in-progress generation.            | `DELETE /api/public/v1/sessions/{sessionId}` |
+| Operation | Description                         | API                                                  |
+| --------- | ----------------------------------- | ---------------------------------------------------- |
+| Get       | Get a run's status, plan and link.  | `GET /api/public/v1/generation/runs/{runId}`         |
+| Cancel    | Cancel a run that has not finished. | `POST /api/public/v1/generation/runs/{runId}/cancel` |
 
-The **Generate** and **Plan Outline** operations both expose **Topic**, **Outline Hints** (required) and **Page Count** up front. Everything else — Tone, Audience, Image Style, Verbosity, Model, Theme, Theme Mode, Media Provider, Icon Family, Call To Action (text + toggle), Deep Research, Use Connectors, End-User Email/Role, Callback URL — lives under **Additional Fields**, plus a **Supporting Materials** collection.
+**Generate** takes a **Brief** (required: what to make plus any notes or data, up to 200,000 characters), an **Artifact Type** (Deck, One-Pager or Proposal) and a **Page Count** (Auto or 4+; a one-pager is always one page). Audience, Tone, Call To Action, Language, Research, Style (decks), One-Pager Design (one-pagers), Theme and Fit To Page Cap live under **Additional Fields**.
 
-> **Polling is not handled inside the node.** `Generate` returns a `sessionId` immediately; you decide how to wait (a Wait node + Get Status loop, or the Encelade Trigger node). This keeps long-running generations from tying up an n8n worker.
+> **Polling is not handled inside the node.** `Generate` returns `{ runId, projectPid, status: "queued" }` immediately; you decide how to wait (a Wait node + Generation Run → Get loop, or the Encelade Trigger node). This keeps long-running generations from tying up an n8n worker.
 
 ### Encelade Trigger (trigger node)
 
@@ -62,14 +60,12 @@ You need an Encelade API token.
 
 1. Get a token the quick way at **[encelade.ai/setup/n8n](https://www.encelade.ai/setup/n8n)** — sign in and click **Mint** (it provisions your account if needed). Or create one manually in your Encelade account / API settings.
 2. Grant the scopes your workflow needs (each operation needs only the scopes listed):
-   - `project:plan` — Plan Outline
-   - `project:plan` + `project:generate` — Generate (it plans _then_ generates, so it needs both)
-   - `project:generate` — Generate From Plan
+   - `project:generate` — Generate
    - `project:read` — Get / Get Many (also the credential Test button)
    - `project:write` — Update
    - `project:delete` — Delete
-   - `session:read` — Get Status
-   - `session:write` — Cancel
+   - `session:read` — Generation Run → Get
+   - `session:write` — Generation Run → Cancel
    - `webhook:read` + `webhook:write` — Encelade Trigger
 3. In n8n create **Encelade API** credentials and paste the token into **API Key**. The token is sent as `Authorization: Bearer <token>` and the tenant is derived from the token — no extra header needed.
 4. **Base URL** defaults to `https://www.encelade.ai`; change it only for self-hosted deployments.
@@ -86,28 +82,17 @@ Built and tested against n8n with `n8n-workflow` 2.x (n8n nodes API version 1). 
 
 ### Generate → Poll (recommended)
 
-**Generate** plans _and_ builds the deck in a single call — there is no separate plan step to run first. Planning happens inside the operation, which is why the initial response reads `status: "planning"`. It returns a `sessionId` immediately; you then poll for the result:
-
-1. **Encelade → Generate** with a Topic and at least one Outline Hint → returns `{ sessionId, status: "planning" }`.
-2. **Wait** node (e.g. 15–30s).
-3. **Encelade → Session: Get Status** with the `sessionId`.
-4. **IF** `phase` is `done` → continue (the response includes `projectPid` and `link`; `shareLink` is present only when the deck was generated for an end user via End-User Email). If `phase` is `failed` → handle the error. Otherwise loop back to the Wait node.
-5. Optionally **Encelade → Get** or **Get Published** to fetch the finished deck.
-
-### Review the outline first (optional)
-
-Use this only when a human (or another workflow step) needs to review or edit the outline before slides are built. Note that **Generate ignores a plan** — to build from an edited outline you must use **Generate From Plan**, not Generate:
-
-1. **Encelade → Plan Outline** with a Topic and Outline Hints → returns an editable `plan`.
-2. Edit the `plan` as needed (e.g. a Set/Edit Fields node or a manual approval step).
-3. **Encelade → Generate From Plan** with that plan → returns a `sessionId`.
-4. Poll **Session → Get Status** as in steps 2–5 above.
+1. **Encelade → Generate** with a Brief → returns `{ runId, projectPid, status: "queued" }`.
+2. **Wait** node (e.g. 15 seconds).
+3. **Encelade → Generation Run: Get** with the `runId`.
+4. **IF** `status` is `done` → continue with `link` (the project URL). If it is `failed` or `canceled` → handle the error (`error` is `{ stage, code }`). Otherwise loop back to the Wait node.
+5. Optionally **Encelade → Get** with the `projectPid` to fetch the finished deck.
 
 ### Event-driven (no polling)
 
-Instead of polling, add an **Encelade Trigger** node, subscribe to **Generation Completed** / **Generation Failed**, and activate the workflow before generating. The trigger fires with `{ event, sessionId, projectPid, timestamp }` when the deck is ready.
+Instead of polling, add an **Encelade Trigger** node, subscribe to **Generation Completed** / **Generation Failed**, and activate the workflow before generating. The trigger fires with `{ event, runId, projectPid, timestamp }`, plus `error` on failure.
 
-> Generation typically takes up to ~3 minutes for a 10–15 page deck (longer with Deep Research).
+> A run takes a few minutes.
 
 ## Resources
 
