@@ -16,7 +16,7 @@ export class EnceladeTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Encelade Trigger',
 		name: 'enceladeTrigger',
-		icon: 'file:encelade.svg',
+		icon: { light: 'file:encelade-light.svg', dark: 'file:encelade-dark.svg' },
 		group: ['trigger'],
 		version: 1,
 		subtitle: '=Events: {{$parameter["events"].join(", ")}}',
@@ -24,7 +24,6 @@ export class EnceladeTrigger implements INodeType {
 		defaults: {
 			name: 'Encelade Trigger',
 		},
-		usableAsTool: true,
 		inputs: [],
 		outputs: [NodeConnectionTypes.Main],
 		credentials: [
