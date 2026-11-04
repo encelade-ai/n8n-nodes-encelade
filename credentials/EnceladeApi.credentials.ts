@@ -13,7 +13,10 @@ export class EnceladeApi implements ICredentialType {
 
 	documentationUrl = 'https://www.encelade.ai/docs';
 
-	icon: Icon = 'file:../nodes/Encelade/encelade.svg';
+	icon: Icon = {
+		light: 'file:../nodes/Encelade/encelade-light.svg',
+		dark: 'file:../nodes/Encelade/encelade-dark.svg',
+	};
 
 	properties: INodeProperties[] = [
 		{

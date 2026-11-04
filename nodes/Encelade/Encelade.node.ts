@@ -25,7 +25,7 @@ export class Encelade implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Encelade',
 		name: 'encelade',
-		icon: 'file:encelade.svg',
+		icon: { light: 'file:encelade-light.svg', dark: 'file:encelade-dark.svg' },
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
